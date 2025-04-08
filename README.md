@@ -42,4 +42,4 @@ timestamp, login, cwd, script, script_dir, commandline, python_version
 ```
 and several entries giving the various fields of the os.uname() return value.
 
-There is also a dictionary called `package_version_dict`, which contains version numbers for as many imported Python packages as it can. So, for example, this will include the version number of numpy and osgeo (i.e. GDAL) which are imported at the time of execution.
+There is also an entry called `package_version_dict`, which contains a dictionary of version numbers for as many imported Python packages as it can find. So, for example, this will include the version number of numpy and osgeo (i.e. GDAL) which are imported at the time of execution.
