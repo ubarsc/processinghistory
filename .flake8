@@ -1,0 +1,6 @@
+[flake8]
+exclude = .git,__pycache__,build,dist
+# E501 line too long (??? > 79 characters)
+# W504 line break after binary operator
+# E128 continuation line under-indented for visual indent
+ignore = E501,W504,E128
