@@ -55,6 +55,52 @@ PARENTS_BY_KEY = "parentsByKey"
 metadataSizeLimitsByDriver = {'GTiff': 28000}
 
 
+class ProcessingHistory:
+    """
+    Hold whole all ancestry and metadata for a single file
+    """
+    def __init__(self):
+        self.metadataByKey = {}
+        self.parentsByKey = {}
+
+    def toJSON(self):
+        """
+        Return a JSON representation of the given processing history
+        """
+        d = {
+            METADATA_BY_KEY: {},
+            PARENTS_BY_KEY: {}
+        }
+        # Copy over all elements, but convert keys from tuples to string repr.
+        for k in self.metadataByKey:
+            kStr = repr(k)
+            d[METADATA_BY_KEY][kStr] = self.metadataByKey[k]
+        for k in self.parentsByKey:
+            kStr = repr(k)
+            d[PARENTS_BY_KEY][kStr] = self.parentsByKey[k]
+
+        jsonStr = json.dumps(d)
+        return jsonStr
+
+    @staticmethod
+    def fromJSON(jsonStr):
+        """
+        Return a processing history object from the given JSON string
+        """
+        d = json.loads(jsonStr)
+
+        procHist = ProcessingHistory()
+        # Copy over all elements, but convert keys from string repr back to tuples
+        for kStr in d[METADATA_BY_KEY]:
+            k = eval(kStr)
+            procHist.metadataByKey[k] = d[METADATA_BY_KEY][kStr]
+        for kStr in d[PARENTS_BY_KEY]:
+            k = eval(kStr)
+            procHist.parentsByKey[k] = [tuple(p) for p in d[PARENTS_BY_KEY][kStr]]
+
+        return procHist
+
+
 def makeAutomaticFields():
     """
     Generate a dictionary populated with all the fields which are automatically
@@ -132,7 +178,7 @@ def writeHistoryToFile(userDict={}, parents=[], *, filename=None, gdalDS=None):
     drvrName = ds.GetDriver().ShortName
 
     # Convert to JSON
-    procHistJSON = toJSON(procHist)
+    procHistJSON = procHist.toJSON()
     gdalMetadataName = METADATA_GDALITEMNAME
     gdalMetadataValue = procHistJSON
 
@@ -169,36 +215,31 @@ def makeProcessingHistory(userDict, parents):
 
     # Make the whole processing history dictionary, starting with entries for
     # the current file
-    metadataByKey = {CURRENTFILE_KEY: metaDict}
-    parentsByKey = {CURRENTFILE_KEY: []}
-    procHist = {
-        METADATA_BY_KEY: metadataByKey,
-        PARENTS_BY_KEY: parentsByKey
-    }
+    procHist = ProcessingHistory()
+    procHist.metadataByKey[CURRENTFILE_KEY] = metaDict
 
     # Now add history from each parent file
+    procHist.parentsByKey[CURRENTFILE_KEY] = []
     for parentfile in parents:
         parentHist = readHistoryFromFile(filename=parentfile)
 
-        # Note that the key tuple is turned into a string, so that
-        # it will be JSON-proof
         key = (os.path.basename(parentfile),
-            parentHist[METADATA_BY_KEY][CURRENTFILE_KEY]['timestamp'])
+            parentHist.metadataByKey[CURRENTFILE_KEY]['timestamp'])
 
         # Convert parent's "currentfile" metadata and parentage to normal key entries
-        metadataByKey[key] = parentHist[METADATA_BY_KEY][CURRENTFILE_KEY]
-        parentsByKey[key] = parentHist[PARENTS_BY_KEY][CURRENTFILE_KEY]
+        procHist.metadataByKey[key] = parentHist.metadataByKey[CURRENTFILE_KEY]
+        procHist.parentsByKey[key] = parentHist.parentsByKey[CURRENTFILE_KEY]
 
         # Remove those from parentHist
-        parentHist[METADATA_BY_KEY].pop(CURRENTFILE_KEY)
-        parentHist[PARENTS_BY_KEY].pop(CURRENTFILE_KEY)
+        parentHist.metadataByKey.pop(CURRENTFILE_KEY)
+        parentHist.parentsByKey.pop(CURRENTFILE_KEY)
 
         # Copy over all the other ancestor metadata and parentage
-        metadataByKey.update(parentHist[METADATA_BY_KEY])
-        parentsByKey.update(parentHist[PARENTS_BY_KEY])
+        procHist.metadataByKey.update(parentHist.metadataByKey)
+        procHist.parentsByKey.update(parentHist.parentsByKey)
 
         # Add this parent as parent of current file
-        parentsByKey[CURRENTFILE_KEY].append(key)
+        procHist.parentsByKey[CURRENTFILE_KEY].append(key)
 
     return procHist
 
@@ -223,48 +264,9 @@ def readHistoryFromFile(filename=None, gdalDS=None):
             procHistJSON = zlib.decompress(base64.b64decode(procHistJSON_zipped))
 
     if procHistJSON is not None:
-        procHist = fromJSON(procHistJSON)
+        procHist = ProcessingHistory.fromJSON(procHistJSON)
     else:
         procHist = None
-
-    return procHist
-
-
-def toJSON(procHist):
-    """
-    Return a JSON representation of the given processing history
-    """
-    d = {
-        METADATA_BY_KEY: {},
-        PARENTS_BY_KEY: {}
-    }
-    for k in procHist[METADATA_BY_KEY]:
-        kStr = repr(k)
-        d[METADATA_BY_KEY][kStr] = procHist[METADATA_BY_KEY][k]
-    for k in procHist[PARENTS_BY_KEY]:
-        kStr = repr(k)
-        d[PARENTS_BY_KEY][kStr] = procHist[PARENTS_BY_KEY][k]
-
-    jsonStr = json.dumps(d)
-    return jsonStr
-
-
-def fromJSON(jsonStr):
-    """
-    Return a processing history object from the given JSON string
-    """
-    d = json.loads(jsonStr)
-
-    procHist = {
-        METADATA_BY_KEY: {},
-        PARENTS_BY_KEY: {}
-    }
-    for kStr in d[METADATA_BY_KEY]:
-        k = eval(kStr)
-        procHist[METADATA_BY_KEY][k] = d[METADATA_BY_KEY][kStr]
-    for kStr in d[PARENTS_BY_KEY]:
-        k = eval(kStr)
-        procHist[PARENTS_BY_KEY][k] = [tuple(p) for p in d[PARENTS_BY_KEY][kStr]]
 
     return procHist
 

@@ -63,7 +63,7 @@ class Fulltest(unittest.TestCase):
             history.writeHistoryToFile(userDict, filename=filename)
             # Now read it back
             procHist = history.readHistoryFromFile(filename=filename)
-            metadict = procHist[history.METADATA_BY_KEY][history.CURRENTFILE_KEY]
+            metadict = procHist.metadataByKey[history.CURRENTFILE_KEY]
 
             # Now check it contains all of userDict
             for k in userDict:
@@ -109,18 +109,16 @@ class Fulltest(unittest.TestCase):
         # Read the history from the last child, and check it has everything
         procHist = history.readHistoryFromFile(filename=filelist[3])
 
-        metadataByKey = procHist[history.METADATA_BY_KEY]
-        parentsByKey = procHist[history.PARENTS_BY_KEY]
         # Do some checks
-        self.assertEqual(len(metadataByKey), numFiles,
+        self.assertEqual(len(procHist.metadataByKey), numFiles,
             msg="Incorrect count of metadataByKey")
-        self.assertEqual(len(parentsByKey), numFiles,
+        self.assertEqual(len(procHist.parentsByKey), numFiles,
             msg="Incorrect count of parentsByKey")
-        self.assertEqual(len(parentsByKey[history.CURRENTFILE_KEY]), 2,
+        self.assertEqual(len(procHist.parentsByKey[history.CURRENTFILE_KEY]), 2,
             msg="Incorrect number of parents")
 
         # Check parent file names
-        parentsKeys = [k for k in parentsByKey[history.CURRENTFILE_KEY]]
+        parentsKeys = [k for k in procHist.parentsByKey[history.CURRENTFILE_KEY]]
         parentFiles = [filename for (filename, timestamp) in parentsKeys]
         parentFiles = sorted(parentFiles)
         self.assertEqual(parentFiles, trueParents, msg="Incorrect parents")
@@ -129,7 +127,7 @@ class Fulltest(unittest.TestCase):
         # by two different parents.
         allGrandparents = set()
         for k in parentsKeys:
-            grandparentList = parentsByKey[k]
+            grandparentList = procHist.parentsByKey[k]
             self.assertEqual(len(grandparentList), 1,
                 msg=f"Incorrect grandparent count through parent '{k}'")
             allGrandparents.add(grandparentList[0])
@@ -141,10 +139,10 @@ class Fulltest(unittest.TestCase):
             msg="Incorrect grandparent filename")
 
         # Check that timestamps match
-        for k in metadataByKey:
+        for k in procHist.metadataByKey:
             if k != history.CURRENTFILE_KEY:
                 (filename, timestamp) = k
-                metadict = metadataByKey[k]
+                metadict = procHist.metadataByKey[k]
                 self.assertEqual(timestamp, metadict['timestamp'],
                     msg="Timestamp mis-match")
 
@@ -167,7 +165,7 @@ class Fulltest(unittest.TestCase):
         drvrName = ds.GetDriver().ShortName
         del ds
 
-        metadict = procHist[history.METADATA_BY_KEY][history.CURRENTFILE_KEY]
+        metadict = procHist.metadataByKey[history.CURRENTFILE_KEY]
 
         # Now check it contains all of userDict
         for k in userDict:
