@@ -20,6 +20,9 @@ file name and the timestamp of that file. This means that references to a
 file in this context are referring to that file as created at that time, so
 that different versions of a file count as distinct entities.
 
+The key tuples are turned into strings using repr(), in order that JSON will
+cope with them. To turn them back into tuples, use eval().
+
 """
 import sys
 import os
