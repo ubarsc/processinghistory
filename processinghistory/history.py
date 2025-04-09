@@ -100,6 +100,20 @@ class ProcessingHistory:
 
         return procHist
 
+    def findKeyByFile(self, filename):
+        """
+        Return a list of all full keys from self.metadataByKey which match the
+        given filename. Normally this is just a single key, so the list has
+        only one element, but this should be checked.
+
+        """
+        matches = []
+        for key in self.metadataByKey:
+            if key != CURRENTFILE_KEY:
+                if filename == key[0]:
+                    matches.append(key)
+        return matches
+
 
 def makeAutomaticFields():
     """

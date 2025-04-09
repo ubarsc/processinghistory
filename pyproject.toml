@@ -18,6 +18,7 @@ readme = "README.md"
 license = {text = "MIT License"}
 
 [project.scripts]
+historyview = "processinghistory.cmdline.historyview:mainCmd"
 test_processinghistory = "processinghistory.tests:mainCmd"
 
 [tool.setuptools]
