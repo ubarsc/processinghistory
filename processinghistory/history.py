@@ -14,18 +14,21 @@ The metadata is stored as a JSON string in a single GDAL Metadata Item.
 
 Data Structures
 ---------------
-The whole processing history is stored as a dictionary with two entries, each
-of which is also a dictionary. Both these are keyed by a tuple of the
-file name and the timestamp of that file. This means that references to a
-file in this context are referring to that file as created at that time, so
-that different versions of a file count as distinct entities.
+The whole processing history is stored as an instance of ProcessingHistory.
+This has two attributes, metadataByKey and parentsByKey, both of which are
+dictionary. Each of these is keyed by a tuple of the file name and the
+timestamp of that file. This means that references to a file in this context
+are referring to that file as created at that time, so that different versions
+of a file count as distinct entities. There are entries for all files in the
+lineage. The current file (i.e. the file containing this lineage) is keyed
+by a special key, so that the file's own name is not embedded inside itself.
 
-The metadataByKey dictionary has an entry for each file, the value is its own
-metadata dictionary.
+The metadataByKey dictionary has an entry for each file in the lineage, the
+value is that file's own metadata dictionary.
 
-The parentsByKey dictionary has an entry for each file, the value being a list
-of keys of the parents of that file. This dictionary stores all the ancestry
-relationships for the whole lineage.
+The parentsByKey dictionary has an entry for each file in the lineage, the
+value being a list of keys of the parents of that file. This dictionary stores
+all the ancestry relationships for the whole lineage.
 
 """
 import sys
