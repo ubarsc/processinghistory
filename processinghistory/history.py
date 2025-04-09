@@ -27,7 +27,7 @@ The metadataByKey dictionary has an entry for each file, the value is its own
 metadata dictionary.
 
 The parentsByKey dictionary has an entry for each file, the value being a list
-of keys of the parents of that file. The dictionary stores all the ancestry
+of keys of the parents of that file. This dictionary stores all the ancestry
 relationships for the whole lineage.
 
 """
