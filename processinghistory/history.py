@@ -20,9 +20,6 @@ file name and the timestamp of that file. This means that references to a
 file in this context are referring to that file as created at that time, so
 that different versions of a file count as distinct entities.
 
-The key tuples are turned into strings using repr(), in order that JSON will
-cope with them. To turn them back into tuples, use eval().
-
 The metadataByKey dictionary has an entry for each file, the value is its own
 metadata dictionary.
 
@@ -135,7 +132,7 @@ def writeHistoryToFile(userDict={}, parents=[], *, filename=None, gdalDS=None):
     drvrName = ds.GetDriver().ShortName
 
     # Convert to JSON
-    procHistJSON = json.dumps(procHist)
+    procHistJSON = toJSON(procHist)
     gdalMetadataName = METADATA_GDALITEMNAME
     gdalMetadataValue = procHistJSON
 
@@ -185,8 +182,8 @@ def makeProcessingHistory(userDict, parents):
 
         # Note that the key tuple is turned into a string, so that
         # it will be JSON-proof
-        key = repr((os.path.basename(parentfile),
-            parentHist[METADATA_BY_KEY][CURRENTFILE_KEY]['timestamp']))
+        key = (os.path.basename(parentfile),
+            parentHist[METADATA_BY_KEY][CURRENTFILE_KEY]['timestamp'])
 
         # Convert parent's "currentfile" metadata and parentage to normal key entries
         metadataByKey[key] = parentHist[METADATA_BY_KEY][CURRENTFILE_KEY]
@@ -226,9 +223,48 @@ def readHistoryFromFile(filename=None, gdalDS=None):
             procHistJSON = zlib.decompress(base64.b64decode(procHistJSON_zipped))
 
     if procHistJSON is not None:
-        procHist = json.loads(procHistJSON)
+        procHist = fromJSON(procHistJSON)
     else:
         procHist = None
+
+    return procHist
+
+
+def toJSON(procHist):
+    """
+    Return a JSON representation of the given processing history
+    """
+    d = {
+        METADATA_BY_KEY: {},
+        PARENTS_BY_KEY: {}
+    }
+    for k in procHist[METADATA_BY_KEY]:
+        kStr = repr(k)
+        d[METADATA_BY_KEY][kStr] = procHist[METADATA_BY_KEY][k]
+    for k in procHist[PARENTS_BY_KEY]:
+        kStr = repr(k)
+        d[PARENTS_BY_KEY][kStr] = procHist[PARENTS_BY_KEY][k]
+
+    jsonStr = json.dumps(d)
+    return jsonStr
+
+
+def fromJSON(jsonStr):
+    """
+    Return a processing history object
+    """
+    d = json.loads(jsonStr)
+
+    procHist = {
+        METADATA_BY_KEY: {},
+        PARENTS_BY_KEY: {}
+    }
+    for kStr in d[METADATA_BY_KEY]:
+        k = eval(kStr)
+        procHist[METADATA_BY_KEY][k] = d[METADATA_BY_KEY][kStr]
+    for kStr in d[PARENTS_BY_KEY]:
+        k = eval(kStr)
+        procHist[PARENTS_BY_KEY][k] = [tuple(p) for p in d[PARENTS_BY_KEY][kStr]]
 
     return procHist
 
