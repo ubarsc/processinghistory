@@ -8,10 +8,17 @@ of what it is, and so on. In addition to that dictionary, there is also
 a copy of the history metadata for all the parent GDAL files that were
 inputs to creating the current file, so that the entire lineage is saved with
 the current file. This means the detail of its creation can be traced, even
-without access to the parent files. 
+without access to the parent files.
 
 The metadata is stored as a JSON string in a single GDAL Metadata Item.
 
+Data Structures
+---------------
+The whole processing history is stored as a dictionary with two entries, each
+of which is also a dictionary. Both these are keyed by a tuple of the
+file name and the timestamp of that file. This means that references to a
+file in this context are referring to that file as created at that time, so
+that different versions of a file count as distinct entities.
 
 """
 import sys
@@ -33,6 +40,12 @@ METADATA_GDALITEMNAME_Zipped = "ProcessingHistory_Zipped"
 CURRENTFILE_KEY = "CURRENTFILE"
 METADATA_BY_KEY = "metadataByKey"
 PARENTS_BY_KEY = "parentsByKey"
+
+# These GDAL drivers are known to have limits on the size of metadata which
+# can be stored, and so we need to keep below these, or we lose everything.
+# The values are given in bytes. The GTiff limit is actually mysteriously
+# complicated, but this value seems to cover it.
+metadataSizeLimitsByDriver = {'GTiff': 28000}
 
 
 def makeAutomaticFields():
@@ -67,15 +80,15 @@ def makeAutomaticFields():
     # Find version numbers of any external imported modules (if possible)
     moduleVersionDict = {}
     modnameList = list(sys.modules.keys())
-    # To eliminate modules coming from Python's own set, we exclude any whose 
+    # To eliminate modules coming from Python's own set, we exclude any whose
     # filename starts with either sys.prefix or the same as the os module.
-    # When using a virtualenv, these can be different. 
+    # When using a virtualenv, these can be different.
     osModDir = os.path.dirname(os.__file__)
     for modname in modnameList:
         modobj = sys.modules[modname]
         if hasattr(modobj, '__file__') and modobj.__file__ is not None:
             modDirname = os.path.dirname(modobj.__file__)
-            partOfPython = ((modDirname.startswith(sys.prefix) and "site-packages" not in modDirname) or 
+            partOfPython = ((modDirname.startswith(sys.prefix) and "site-packages" not in modDirname) or
                 (modDirname.startswith(osModDir) and "site-packages" not in modDirname) or
                 (modname.startswith('__editable__') and modname.endswith('_finder')))
             if not partOfPython:
@@ -109,15 +122,34 @@ def writeHistoryToFile(userDict={}, parents=[], *, filename=None, gdalDS=None):
     if ds is None:
         raise ProcessingHistoryError("Must supply either filename or gdalDS")
 
-    # Convert to JSON
-    procHist_json = json.dumps(procHist)
+    drvrName = ds.GetDriver().ShortName
 
+    # Convert to JSON
+    procHistJSON = json.dumps(procHist)
     gdalMetadataName = METADATA_GDALITEMNAME
-    # If compressing required, should happen here.....
+    gdalMetadataValue = procHistJSON
+
+    # Some drivers (GTiff) have size limits, so compress if required.
+    if drvrName in metadataSizeLimitsByDriver:
+        # The driver has size limits, so check if we need to compress
+        valueLen = len(gdalMetadataValue)
+        sizeLimit = metadataSizeLimitsByDriver[drvrName]
+        if valueLen > sizeLimit:
+            procHistJSON_zipped = base64.b64encode(
+                zlib.compress(gdalMetadataValue, 9))
+            gdalMetadataName = METADATA_GDALITEMNAME_Zipped
+            gdalMetadataValue = procHistJSON_zipped
+
+        # Check again, and if still too large, raise an exception
+        valueLen = len(gdalMetadataValue)
+        if valueLen > metadataSizeLimitsByDriver[drvrName]:
+            msg = ("Processing history size (compressed) = {} bytes. {} driver " +
+                   "is limited to {}").format(valueLen, drvrName, sizeLimit)
+            raise ProcessingHistoryError(msg)
 
     # Save in the Dataset
-    ds.SetMetadataItem(gdalMetadataName, procHist_json)
-        
+    ds.SetMetadataItem(gdalMetadataName, gdalMetadataValue)
+
 
 def makeProcessingHistory(userDict, parents):
     """
@@ -157,6 +189,33 @@ def makeProcessingHistory(userDict, parents):
 
         # Add this parent as parent of current file
         parentsByKey[CURRENTFILE_KEY].append(key)
+
+    return procHist
+
+
+def readHistoryFromFile(filename=None, gdalDS=None):
+    """
+    Read processing history from file.
+
+    File to read can be specified as either a filename, or an open GDAL
+    Dataset object.
+
+    """
+    if filename is not None:
+        ds = gdal.Open(filename)
+    else:
+        ds = gdalDS
+
+    procHistJSON = ds.GetMetadataItem(METADATA_GDALITEMNAME)
+    if procHistJSON is None:
+        procHistJSON_zipped = ds.GetMetadataItem(METADATA_GDALITEMNAME_Zipped)
+        if procHistJSON_zipped is not None:
+            procHistJSON = zlib.decompress(base64.b64decode(procHistJSON_zipped))
+
+    if procHistJSON is not None:
+        procHist = json.loads(procHistJSON)
+    else:
+        procHist = None
 
     return procHist
 
