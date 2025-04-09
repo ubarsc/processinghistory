@@ -23,6 +23,13 @@ that different versions of a file count as distinct entities.
 The key tuples are turned into strings using repr(), in order that JSON will
 cope with them. To turn them back into tuples, use eval().
 
+The metadataByKey dictionary has an entry for each file, the value is its own
+metadata dictionary.
+
+The parentsByKey dictionary has an entry for each file, the value being a list
+of keys of the parents of that file. The dictionary stores all the ancestry
+relationships for the whole lineage.
+
 """
 import sys
 import os
