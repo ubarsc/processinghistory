@@ -251,7 +251,7 @@ def toJSON(procHist):
 
 def fromJSON(jsonStr):
     """
-    Return a processing history object
+    Return a processing history object from the given JSON string
     """
     d = json.loads(jsonStr)
 
