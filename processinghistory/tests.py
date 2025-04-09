@@ -97,7 +97,8 @@ class Fulltest(unittest.TestCase):
         history.writeHistoryToFile(userDict, parents=[filelist[0]],
             filename=filelist[2])
         userDict['INDEX'] = 3
-        history.writeHistoryToFile(userDict, parents=filelist[1:3],
+        trueParents = sorted(filelist[1:3])
+        history.writeHistoryToFile(userDict, parents=trueParents,
             filename=filelist[3])
 
         # Read the history from the last child, and check it has everything
@@ -112,6 +113,20 @@ class Fulltest(unittest.TestCase):
             msg="Incorrect count of parentsByKey")
         self.assertEqual(len(parentsByKey[history.CURRENTFILE_KEY]), 2,
             msg="Incorrect number of parents")
+
+        # Check parent file names
+        parentsKeys = [eval(k) for k in parentsByKey[history.CURRENTFILE_KEY]]
+        parentFiles = [filename for (filename, timestamp) in parentsKeys]
+        parentFiles = sorted(parentFiles)
+        self.assertEqual(parentFiles, trueParents, msg="Incorrect parents")
+
+        # Check that timestamps match
+        for k in metadataByKey:
+            if k != history.CURRENTFILE_KEY:
+                (filename, timestamp) = eval(k)
+                metadict = metadataByKey[k]
+                self.assertEqual(timestamp, metadict['timestamp'],
+                    msg="Timestamp mis-match")
 
         self.deleteTempFiles(filelist)
         
