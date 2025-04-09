@@ -173,7 +173,10 @@ def makeProcessingHistory(userDict, parents):
     for parentfile in parents:
         parentHist = readHistoryFromFile(filename=parentfile)
 
-        key = (os.path.basename(parentfile), parentHist['timestamp'])
+        # Note that the key tuple is turned into a string, so that
+        # it will be JSON-proof
+        key = repr((os.path.basename(parentfile),
+            parentHist[METADATA_BY_KEY][CURRENTFILE_KEY]['timestamp']))
 
         # Convert parent's "currentfile" metadata and parentage to normal key entries
         metadataByKey[key] = parentHist[METADATA_BY_KEY][CURRENTFILE_KEY]

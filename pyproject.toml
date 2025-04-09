@@ -1,0 +1,30 @@
+# The installation requires pip>=23.0. If not, it will fail in rather
+# cryptic ways (depending exactly what options are used).
+#
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "processinghistory"
+dynamic = ["version"]
+authors = [
+  {name = "Neil Flood"},
+  {name = "Sam Gillingham"}
+]
+description = "Add processing history to a GDAL raster file"
+readme = "README.md"
+license = {text = "MIT License"}
+
+[project.scripts]
+test_processinghistory = "processinghistory.tests:mainCmd"
+
+[tool.setuptools]
+packages = ["processinghistory"]
+
+[tool.setuptools.dynamic]
+version = {attr = "processinghistory.__version__"}
+
+[project.urls]
+Repository = "https://github.com/ubarsc/processinghistory.git"
