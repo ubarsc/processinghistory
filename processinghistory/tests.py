@@ -144,7 +144,6 @@ class Fulltest(unittest.TestCase):
                     msg="Timestamp mis-match")
 
         self.deleteTempFiles(filelist)
-        
 
     def test_useDataset(self):
         """
