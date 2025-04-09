@@ -48,6 +48,8 @@ gdal.UseExceptions()
 METADATA_GDALITEMNAME = "ProcessingHistory"
 METADATA_GDALITEMNAME_Zipped = "ProcessingHistory_Zipped"
 CURRENTFILE_KEY = "CURRENTFILE"
+METADATA_BY_KEY = "metadataByKey"
+PARENTS_BY_KEY = "parentsByKey"
 
 # These GDAL drivers are known to have limits on the size of metadata which
 # can be stored, and so we need to keep below these, or we lose everything.
