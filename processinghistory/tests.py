@@ -115,15 +115,30 @@ class Fulltest(unittest.TestCase):
             msg="Incorrect number of parents")
 
         # Check parent file names
-        parentsKeys = [eval(k) for k in parentsByKey[history.CURRENTFILE_KEY]]
+        parentsKeys = [k for k in parentsByKey[history.CURRENTFILE_KEY]]
         parentFiles = [filename for (filename, timestamp) in parentsKeys]
         parentFiles = sorted(parentFiles)
         self.assertEqual(parentFiles, trueParents, msg="Incorrect parents")
 
+        # Check grandparent relationships. The same file should be grandparent
+        # by two different parents.
+        allGrandparents = set()
+        for k in parentsKeys:
+            grandparentList = parentsByKey[k]
+            self.assertEqual(len(grandparentList), 1,
+                msg=f"Incorrect grandparent count through parent '{k}'")
+            allGrandparents.add(grandparentList[0])
+        self.assertEqual(len(allGrandparents), 1,
+            msg="Incorrect total grandparent count")
+        grandparentKey = list(allGrandparents)[0]
+        grandparentFile = grandparentKey[0]
+        self.assertEqual(grandparentFile, filelist[0],
+            msg="Incorrect grandparent filename")
+
         # Check that timestamps match
         for k in metadataByKey:
             if k != history.CURRENTFILE_KEY:
-                (filename, timestamp) = eval(k)
+                (filename, timestamp) = k
                 metadict = metadataByKey[k]
                 self.assertEqual(timestamp, metadict['timestamp'],
                     msg="Timestamp mis-match")
