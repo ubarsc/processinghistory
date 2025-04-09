@@ -42,9 +42,6 @@ import base64
 from osgeo import gdal
 
 
-gdal.UseExceptions()
-
-
 METADATA_GDALITEMNAME = "ProcessingHistory"
 METADATA_GDALITEMNAME_Zipped = "ProcessingHistory_Zipped"
 CURRENTFILE_KEY = "CURRENTFILE"
