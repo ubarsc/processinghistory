@@ -68,7 +68,7 @@ class ProcessingHistory:
 
     def toJSON(self):
         """
-        Return a JSON representation of the given processing history
+        Return a JSON representation of the given ProcessingHistory
         """
         d = {
             METADATA_BY_KEY: {},
@@ -88,7 +88,7 @@ class ProcessingHistory:
     @staticmethod
     def fromJSON(jsonStr):
         """
-        Return a processing history object from the given JSON string
+        Return a ProcessingHistory object from the given JSON string
         """
         d = json.loads(jsonStr)
 
