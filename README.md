@@ -43,3 +43,32 @@ timestamp, login, cwd, script, script_dir, commandline, python_version
 and several entries giving the various fields of the os.uname() return value.
 
 There is also an entry called `package_version_dict`, which contains a dictionary of version numbers for as many imported Python packages as it can find. So, for example, this will include the version number of numpy and osgeo (i.e. GDAL) which are imported at the time of execution.
+
+## Viewer
+A simple viewer called ``historyview`` is provided, to display the processing history to the console. Since the whole lineage can be quite large and complex, no attempt is made to display the whole thing at once. Rather, the metadata dictionary or the list of parents can be displayed, for either the main file itself, or for a nominated ancestor file with.
+
+Command line help can be displayed with ``--help``. Example output is shown below
+```
+$ historyview tstHist2.kea
+timestamp: 2025-04-10 08:59:08+1000
+login: neil
+uname_os: Linux
+uname_host: neil-Aspire-A315-34
+uname_release: 6.11.0-21-generic
+uname_version: #21~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Mon Feb 24 16:52:15
+               UTC 2
+uname_machine: x86_64
+cwd: /home/neil/tmp
+python_version: 3.11.10
+package_version_dict: {"_distutils_hack": "Unknown", "processinghistory":
+                      "1.0.0", "osgeo": "3.10.0"}
+UNITS: Feet
+DESCRIPTION: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+             do eiusmod tempor incididunt ut labore et dolore magna
+             aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+             ullamco laboris nisi ut aliquip ex ea commodo consequat.
+             Duis aute irure dolor in reprehenderit in voluptate velit
+             esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
+             occaecat cupidatat non proident, sunt in culpa qui officia
+             deserunt mollit anim id est laborum.
+```
