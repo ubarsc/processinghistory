@@ -4,6 +4,7 @@ Command line tool to view processing history in simple text form.
 import sys
 import argparse
 import textwrap
+import shutil
 
 from osgeo import gdal
 from processinghistory import history
@@ -16,6 +17,7 @@ def getCmdargs():
     """
     Get command line arguments
     """
+    defaultWidth = shutil.get_terminal_size().columns
     p = argparse.ArgumentParser(
         description=("Display simple text view of processing history " +
                 "from the given file. Default will display the metadata " +
@@ -26,7 +28,7 @@ def getCmdargs():
             "selected ancestor to view, instead of the file itself"))
     p.add_argument("--showparents", default=False, action="store_true",
         help="Display parents instead of metadata dictionary. ")
-    p.add_argument("-w", "--width", default=80, type=int,
+    p.add_argument("-w", "--width", default=defaultWidth, type=int,
         help="Width of display screen in characters (default=%(default)s)")
     cmdargs = p.parse_args()
     return cmdargs
