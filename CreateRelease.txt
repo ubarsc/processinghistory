@@ -15,5 +15,7 @@ Notes on how to create a new release version
    and press "Draft a new release". You should then fill in
        Tag version: processinghistory-A.B.C
        Release Title: Version A.B.C
+       Description: Add a brief description (a few lines at most) explaining
+                    the key points about this release.
        Upload files: Add the tar.gz
        Click "Publish release"
