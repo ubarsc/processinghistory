@@ -18,10 +18,10 @@ def getCmdargs():
     Get command line arguments
     """
     defaultWidth = shutil.get_terminal_size().columns
-    p = argparse.ArgumentParser(
-        description=("Display simple text view of processing history " +
-                "from the given file. Default will display the metadata " +
-                "dictionary of the given file."))
+    p = argparse.ArgumentParser(description="""
+        Display simple text view of processing history from the given file.
+        Default will display the metadata dictionary of the given file.
+    """)
     p.add_argument("filename", help="Name of file to read processing history from")
     p.add_argument("--ancestor", default=None, type=str,
         help=("Filename (or key tuple string) of " +
