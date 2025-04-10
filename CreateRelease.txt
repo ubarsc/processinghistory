@@ -9,7 +9,7 @@ Notes on how to create a new release version
 5. Checkout a clean copy of the repository into a temp directory,
    and "cd" into it.
 6. Create the tar.gz with "python -m build". This will go into
-   a build/ subdirectory
+   a dist/ subdirectory
 7. Go to the Github Releases page for the repo 
        https://github.com/ubarsc/processinghistory/releases
    and press "Draft a new release". You should then fill in
