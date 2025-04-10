@@ -45,7 +45,7 @@ and several entries giving the various fields of the os.uname() return value.
 There is also an entry called `package_version_dict`, which contains a dictionary of version numbers for as many imported Python packages as it can find. So, for example, this will include the version number of numpy and osgeo (i.e. GDAL) which are imported at the time of execution.
 
 ## Viewer
-A simple viewer called ``historyview`` is provided, to display the processing history to the console. Since the whole lineage can be quite large and complex, no attempt is made to display the whole thing at once. Rather, the metadata dictionary or the list of parents can be displayed, for either the main file itself, or for a nominated ancestor file with.
+A simple viewer called ``historyview`` is provided, to display the processing history to the console. Since the whole lineage can be quite large and complex, no attempt is made to display the whole thing at once. Rather, the metadata dictionary or the list of parents can be displayed, for either the main file itself, or for a nominated ancestor file within the lineage.
 
 Command line help can be displayed with ``--help``. Example output is shown below
 ```
