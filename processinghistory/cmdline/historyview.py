@@ -28,6 +28,8 @@ def getCmdargs():
             "selected ancestor to view, instead of the file itself"))
     p.add_argument("--showparents", default=False, action="store_true",
         help="Display parents instead of metadata dictionary. ")
+    p.add_argument("--wholelineage", default=False, action="store_true",
+        help="Display all parent relationships for whole lineage")
     p.add_argument("-w", "--width", default=defaultWidth, type=int,
         help="Width of display screen in characters (default=%(default)s)")
     cmdargs = p.parse_args()
@@ -45,17 +47,19 @@ def mainCmd():
         print("No processing history found in file", cmdargs.filename)
         sys.exit()
 
-    key = history.CURRENTFILE_KEY
-    if cmdargs.ancestor is not None:
-        key = findAncestorKey(procHist, cmdargs.ancestor)
+    if cmdargs.wholelineage:
+        displayWholeLineage(procHist)
+    else:
+        key = history.CURRENTFILE_KEY
+        if cmdargs.ancestor is not None:
+            key = findAncestorKey(procHist, cmdargs.ancestor)
 
-    if key is not None:
-        if cmdargs.showparents:
-            parentsList = procHist.parentsByKey[key]
-            displayParents(parentsList, cmdargs)
-        else:
-            metadict = procHist.metadataByKey[key]
-            displayDict(metadict, cmdargs)
+        if key is not None:
+            if cmdargs.showparents:
+                displayParents(key, procHist)
+            else:
+                metadict = procHist.metadataByKey[key]
+                displayDict(metadict, cmdargs)
 
 
 def findAncestorKey(procHist, ancestor):
@@ -110,12 +114,28 @@ def displayDict(d, cmdargs):
             print(line)
 
 
-def displayParents(parentsList, cmdargs):
+def displayParents(childKey, procHist):
     """
     Display the given list of parents in simple text form
     """
-    for key in parentsList:
-        print(key)
+    indent = '    '
+    print(childKey)
+    parentsList = procHist.parentsByKey[childKey]
+    if len(parentsList) > 0:
+        for key in parentsList:
+            print(indent, key)
+    else:
+        print(indent, "No parents")
+
+
+def displayWholeLineage(procHist):
+    """
+    Display parent relationships for whole lineage
+    """
+    displayParents(history.CURRENTFILE_KEY, procHist)
+    for key in procHist.parentsByKey:
+        if key != history.CURRENTFILE_KEY:
+            displayParents(key, procHist)
 
 
 class HistoryviewTextError(Exception):
