@@ -21,9 +21,6 @@ license = {text = "MIT License"}
 historyview = "processinghistory.cmdline.historyview:mainCmd"
 test_processinghistory = "processinghistory.tests:mainCmd"
 
-[tool.setuptools]
-packages = ["processinghistory"]
-
 [tool.setuptools.dynamic]
 version = {attr = "processinghistory.__version__"}
 
