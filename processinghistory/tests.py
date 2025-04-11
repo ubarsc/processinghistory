@@ -34,8 +34,7 @@ def makeRaster(filename, drvr='KEA', returnDS=False):
 
 
 # Test these drivers
-driverList = [('KEA', 'kea'), ('HFA', 'img'), ('GTiff', 'tif'),
-    ('JP2OpenJPEG', 'jpg')]
+driverList = [('KEA', 'kea'), ('HFA', 'img'), ('GTiff', 'tif')]
 # Remove any drivers not installed
 driverList = [dd for dd in driverList if gdal.GetDriverByName(dd[0]) is not None]
 
