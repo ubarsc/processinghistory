@@ -47,6 +47,7 @@ METADATA_GDALITEMNAME_Zipped = "ProcessingHistory_Zipped"
 CURRENTFILE_KEY = "CURRENTFILE"
 METADATA_BY_KEY = "metadataByKey"
 PARENTS_BY_KEY = "parentsByKey"
+AUTOENVVARSLIST_NAME = "HISTORY_ENVVARS_TO_AUTOINCLUDE"
 
 # These GDAL drivers are known to have limits on the size of metadata which
 # can be stored, and so we need to keep below these, or we lose everything.
@@ -141,6 +142,16 @@ def makeAutomaticFields():
         dictn['script'] = os.path.basename(script)
         dictn['script_dir'] = os.path.dirname(script)
         dictn['commandline'] = ' '.join(sys.argv[1:])
+
+    # If $<AUTOENVVARSLIST_NAME> is set, it is a space-separated list of
+    # other environment variables which should be included.
+    autoEnvVars = os.getenv(AUTOENVVARSLIST_NAME)
+    if autoEnvVars is not None:
+        autoEnvVarsList = autoEnvVars.split()
+        for envVar in autoEnvVarsList:
+            val = os.getenv(envVar)
+            if val is not None:
+                dictn[envVar] = val
 
     dictn['python_version'] = "{}.{}.{}".format(*sys.version_info)
 
