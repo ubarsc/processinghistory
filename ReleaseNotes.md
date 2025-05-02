@@ -1,5 +1,8 @@
 # Release Notes
 
+## Version 1.0.3
+  * Cope when a parent file has no processing history
+
 ## Version 1.0.2
  * Add HISTORY_ENVVARS_TO_AUTOINCLUDE for configuring default automatic
    metadata entries
