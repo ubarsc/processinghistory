@@ -147,6 +147,29 @@ class Fulltest(unittest.TestCase):
 
         self.deleteTempFiles(filelist)
 
+    def test_parentNoHistory(self):
+        """
+        The case of a parent which has no history
+        """
+        childFile = 'child.kea'
+        parentFile = 'parent.kea'
+        makeRaster(childFile)
+        makeRaster(parentFile)
+        userDict = {'DESCRIPTION': "A test file", 'FIELD1': "Field value"}
+        history.writeHistoryToFile(userDict, filename=childFile,
+            parents=[parentFile])
+        # Now read it back
+        procHist = history.readHistoryFromFile(filename=childFile)
+
+        self.assertNotEqual(procHist, None, msg='History is None')
+        parentsList = procHist.parentsByKey[history.CURRENTFILE_KEY]
+        self.assertEqual(len(parentsList), 1, msg='Incorrect parent count')
+        numMetadata = len(procHist.metadataByKey)
+        self.assertEqual(numMetadata, 1, msg='Incorrect metadata count')
+        self.assertEqual(parentsList[0][0], parentFile, msg='Incorrect parent name')
+
+        self.deleteTempFiles([parentFile, childFile])
+
     def test_useDataset(self):
         """
         Test writing and reading history using an open gdal Dataset
