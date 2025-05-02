@@ -48,6 +48,7 @@ CURRENTFILE_KEY = "CURRENTFILE"
 METADATA_BY_KEY = "metadataByKey"
 PARENTS_BY_KEY = "parentsByKey"
 AUTOENVVARSLIST_NAME = "HISTORY_ENVVARS_TO_AUTOINCLUDE"
+NO_TIMESTAMP = "UnknownTimestamp"
 
 # These GDAL drivers are known to have limits on the size of metadata which
 # can be stored, and so we need to keep below these, or we lose everything.
@@ -248,20 +249,23 @@ def makeProcessingHistory(userDict, parents):
     for parentfile in parents:
         parentHist = readHistoryFromFile(filename=parentfile)
 
-        key = (os.path.basename(parentfile),
-            parentHist.metadataByKey[CURRENTFILE_KEY]['timestamp'])
+        if parentHist is not None:
+            key = (os.path.basename(parentfile),
+                parentHist.metadataByKey[CURRENTFILE_KEY]['timestamp'])
 
-        # Convert parent's "currentfile" metadata and parentage to normal key entries
-        procHist.metadataByKey[key] = parentHist.metadataByKey[CURRENTFILE_KEY]
-        procHist.parentsByKey[key] = parentHist.parentsByKey[CURRENTFILE_KEY]
+            # Convert parent's "currentfile" metadata and parentage to normal key entries
+            procHist.metadataByKey[key] = parentHist.metadataByKey[CURRENTFILE_KEY]
+            procHist.parentsByKey[key] = parentHist.parentsByKey[CURRENTFILE_KEY]
 
-        # Remove those from parentHist
-        parentHist.metadataByKey.pop(CURRENTFILE_KEY)
-        parentHist.parentsByKey.pop(CURRENTFILE_KEY)
+            # Remove those from parentHist
+            parentHist.metadataByKey.pop(CURRENTFILE_KEY)
+            parentHist.parentsByKey.pop(CURRENTFILE_KEY)
 
-        # Copy over all the other ancestor metadata and parentage
-        procHist.metadataByKey.update(parentHist.metadataByKey)
-        procHist.parentsByKey.update(parentHist.parentsByKey)
+            # Copy over all the other ancestor metadata and parentage
+            procHist.metadataByKey.update(parentHist.metadataByKey)
+            procHist.parentsByKey.update(parentHist.parentsByKey)
+        else:
+            key = (os.path.basename(parentfile), NO_TIMESTAMP)
 
         # Add this parent as parent of current file
         procHist.parentsByKey[CURRENTFILE_KEY].append(key)
