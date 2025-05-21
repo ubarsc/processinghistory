@@ -58,8 +58,11 @@ def mainCmd():
             if cmdargs.showparents:
                 displayParents(key, procHist)
             else:
-                metadict = procHist.metadataByKey[key]
-                displayDict(metadict, cmdargs)
+                metadict = procHist.metadataByKey.get(key)
+                if metadict is not None:
+                    displayDict(metadict, cmdargs)
+                else:
+                    print(f'No history metadata for key "{key}"')
 
 
 def findAncestorKey(procHist, ancestor):
