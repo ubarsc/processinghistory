@@ -38,6 +38,11 @@ import json
 import time
 import zlib
 import base64
+try:
+    import importlib.metadata
+    HAVE_IMPLIB_METADATA = True
+except ImportError:
+    HAVE_IMPLIB_METADATA = False
 
 from osgeo import gdal
 
@@ -176,12 +181,55 @@ def makeAutomaticFields():
                     moduleVersionDict[toplevelModname] = "Unknown"
 
     if len(moduleVersionDict) > 0:
-        for modname in moduleVersionDict:
+        moduleVersionDictKeys = list(moduleVersionDict.keys())
+        for modname in moduleVersionDictKeys:
             if hasattr(sys.modules[modname], '__version__'):
                 moduleVersionDict[modname] = str(sys.modules[modname].__version__)
+            else:
+                (distributionName, verStr) = versionFromDistribution(modname)
+                if None not in (distributionName, verStr):
+                    moduleVersionDict[distributionName] = verStr
+                    # If distribution name is different, remove modname
+                    if modname != distributionName:
+                        moduleVersionDict.pop(modname)
+
         dictn['package_version_dict'] = json.dumps(moduleVersionDict)
 
     return dictn
+
+
+def versionFromDistribution(modname):
+    """
+    If possible, deduce a package version number for the given
+    module/package name, using distribution metadata.
+
+    If available, return a tuple of (distributionName, versionStr)
+    Note that the distribution name may not be the same as the
+    module or package name.
+
+    If unavailable for any reason, return (None, None).
+
+    """
+    nullReturn = (None, None)
+
+    # The importlib.metadata module was only introduced in Python 3.8
+    if not HAVE_IMPLIB_METADATA:
+        return nullReturn
+    pkgs = importlib.metadata.packages_distributions()
+    distNameList = pkgs.get(modname)
+    if distNameList is None:
+        return nullReturn
+    if len(distNameList) == 0:
+        return nullReturn
+    distName = distNameList[0]
+    try:
+        verStr = importlib.metadata.version(distName)
+    except importlib.metadata.PackageNotFoundError:
+        verStr = None
+    if verStr is None:
+        return nullReturn
+
+    return (distName, verStr)
 
 
 def writeHistoryToFile(userDict={}, parents=[], *, filename=None, gdalDS=None):
