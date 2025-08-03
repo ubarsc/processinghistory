@@ -76,6 +76,14 @@ class Fulltest(unittest.TestCase):
                 self.assertIn(k, metadict,
                     msg=f"Automatic key {k} missing (driver={drvrName})")
 
+            pkgVerDict = metadict['package_version_dict']
+            for pkg in ['processinghistory', 'osgeo', 'numpy']:
+                self.assertIn(pkg, pkgVerDict,
+                    msg=f"Expected '{pkg}' in package_version_dict, not found")
+            self.assertNotIn('_distutils_hack', pkgVerDict,
+                msg=("Found _distutils_hack in package_version_dict, " +
+                     "should be recorded as setuptools"))
+
         self.deleteTempFiles(tmpfileList)
 
     def test_ancestry(self):
