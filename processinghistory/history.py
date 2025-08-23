@@ -54,6 +54,7 @@ METADATA_BY_KEY = "metadataByKey"
 PARENTS_BY_KEY = "parentsByKey"
 AUTOENVVARSLIST_NAME = "HISTORY_ENVVARS_TO_AUTOINCLUDE"
 NO_TIMESTAMP = "UnknownTimestamp"
+TIMESTAMP = "timestamp"
 
 # These GDAL drivers are known to have limits on the size of metadata which
 # can be stored, and so we need to keep below these, or we lose everything.
@@ -70,9 +71,36 @@ class ProcessingHistory:
         self.metadataByKey = {}
         self.parentsByKey = {}
 
+    def addParentHistory(self, parentfile):
+        """
+        Add history from parent file to self
+        """
+        parentHist = readHistoryFromFile(filename=parentfile)
+
+        if parentHist is not None:
+            key = (os.path.basename(parentfile),
+                parentHist.metadataByKey[CURRENTFILE_KEY][TIMESTAMP])
+
+            # Convert parent's "currentfile" metadata and parentage to normal key entries
+            self.metadataByKey[key] = parentHist.metadataByKey[CURRENTFILE_KEY]
+            self.parentsByKey[key] = parentHist.parentsByKey[CURRENTFILE_KEY]
+
+            # Remove those from parentHist
+            parentHist.metadataByKey.pop(CURRENTFILE_KEY)
+            parentHist.parentsByKey.pop(CURRENTFILE_KEY)
+
+            # Copy over all the other ancestor metadata and parentage
+            self.metadataByKey.update(parentHist.metadataByKey)
+            self.parentsByKey.update(parentHist.parentsByKey)
+        else:
+            key = (os.path.basename(parentfile), NO_TIMESTAMP)
+
+        # Add this parent as parent of current file
+        self.parentsByKey[CURRENTFILE_KEY].append(key)
+
     def toJSON(self):
         """
-        Return a JSON representation of the given ProcessingHistory
+        Return a JSON representation of the current ProcessingHistory
         """
         d = {
             METADATA_BY_KEY: {},
@@ -131,7 +159,7 @@ def makeAutomaticFields():
     dictn = {}
 
     # Time stamp formatted as per ISO 8601 standard, including time zone offset
-    dictn['timestamp'] = time.strftime("%Y-%m-%d %H:%M:%S%z", time.localtime())
+    dictn[TIMESTAMP] = time.strftime("%Y-%m-%d %H:%M:%S%z", time.localtime())
 
     dictn['login'] = getpass.getuser()
 
@@ -239,8 +267,6 @@ def writeHistoryToFile(userDict={}, parents=[], *, filename=None, gdalDS=None):
     File can be specified as either a filename string or an open GDAL Dataset
 
     """
-    procHist = makeProcessingHistory(userDict, parents)
-
     if filename is not None:
         ds = gdal.Open(filename, gdal.GA_Update)
     else:
@@ -250,6 +276,12 @@ def writeHistoryToFile(userDict={}, parents=[], *, filename=None, gdalDS=None):
         raise ProcessingHistoryError("Must supply either filename or gdalDS")
 
     drvrName = ds.GetDriver().ShortName
+    isVRT = (drvrName == "VRT")
+    if isVRT and len(parents) > 0:
+        msg = "History for VRT files should not have parents"
+        raise ProcessingHistoryError(msg)
+
+    procHist = makeProcessingHistory(userDict, parents)
 
     # Convert to JSON
     procHistJSON = procHist.toJSON()
@@ -295,28 +327,7 @@ def makeProcessingHistory(userDict, parents):
     # Now add history from each parent file
     procHist.parentsByKey[CURRENTFILE_KEY] = []
     for parentfile in parents:
-        parentHist = readHistoryFromFile(filename=parentfile)
-
-        if parentHist is not None:
-            key = (os.path.basename(parentfile),
-                parentHist.metadataByKey[CURRENTFILE_KEY]['timestamp'])
-
-            # Convert parent's "currentfile" metadata and parentage to normal key entries
-            procHist.metadataByKey[key] = parentHist.metadataByKey[CURRENTFILE_KEY]
-            procHist.parentsByKey[key] = parentHist.parentsByKey[CURRENTFILE_KEY]
-
-            # Remove those from parentHist
-            parentHist.metadataByKey.pop(CURRENTFILE_KEY)
-            parentHist.parentsByKey.pop(CURRENTFILE_KEY)
-
-            # Copy over all the other ancestor metadata and parentage
-            procHist.metadataByKey.update(parentHist.metadataByKey)
-            procHist.parentsByKey.update(parentHist.parentsByKey)
-        else:
-            key = (os.path.basename(parentfile), NO_TIMESTAMP)
-
-        # Add this parent as parent of current file
-        procHist.parentsByKey[CURRENTFILE_KEY].append(key)
+        procHist.addParentHistory(parentfile)
 
     return procHist
 
@@ -344,6 +355,19 @@ def readHistoryFromFile(filename=None, gdalDS=None):
         procHist = ProcessingHistory.fromJSON(procHistJSON)
     else:
         procHist = None
+
+    # If this is a VRT, then read the component files as though they were
+    # parent files
+    isVRT = (ds.GetDriver().ShortName == "VRT")
+    if isVRT:
+        vrtFile = ds.GetDescription()
+        componentList = [fn for fn in ds.GetFileList() if fn != vrtFile]
+        for componentFile in componentList:
+            if not os.path.exists(componentFile):
+                msg = f"VRT file '{vrtFile}' missing component '{componentFile}'"
+                raise ProcessingHistoryError(msg)
+
+            procHist.addParentHistory(componentFile)
 
     return procHist
 
