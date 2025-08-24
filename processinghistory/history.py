@@ -30,6 +30,15 @@ The parentsByKey dictionary has an entry for each file in the lineage, the
 value being a list of keys of the parents of that file. This dictionary stores
 all the ancestry relationships for the whole lineage.
 
+History in VRT files
+--------------------
+A GDAL VRT file is handled as a somewhat special case. The component files
+of the VRT are treated as parents of the VRT (and there can be no other parents),
+and the history of those files is read directly from them, rather than being
+copied into the VRT. This is handled transparently, so that when history
+is read from the VRT, it appears to have all come from there. This allows the
+history of the components to be as dynamic as the data itself.
+
 """
 import sys
 import os
@@ -362,7 +371,8 @@ def readHistoryFromFile(filename=None, gdalDS=None):
             componentList = [fn for fn in ds.GetFileList() if fn != vrtFile]
             for componentFile in componentList:
                 if not os.path.exists(componentFile):
-                    msg = f"VRT file '{vrtFile}' missing component '{componentFile}'"
+                    msg = (f"VRT file '{vrtFile}' missing component " +
+                           f"'{componentFile}'")
                     raise ProcessingHistoryError(msg)
 
                 procHist.addParentHistory(componentFile)
