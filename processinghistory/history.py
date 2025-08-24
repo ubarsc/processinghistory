@@ -353,21 +353,21 @@ def readHistoryFromFile(filename=None, gdalDS=None):
 
     if procHistJSON is not None:
         procHist = ProcessingHistory.fromJSON(procHistJSON)
+
+        # If this is a VRT, then read the component files as though they were
+        # parent files
+        isVRT = (ds.GetDriver().ShortName == "VRT")
+        if isVRT:
+            vrtFile = ds.GetDescription()
+            componentList = [fn for fn in ds.GetFileList() if fn != vrtFile]
+            for componentFile in componentList:
+                if not os.path.exists(componentFile):
+                    msg = f"VRT file '{vrtFile}' missing component '{componentFile}'"
+                    raise ProcessingHistoryError(msg)
+
+                procHist.addParentHistory(componentFile)
     else:
         procHist = None
-
-    # If this is a VRT, then read the component files as though they were
-    # parent files
-    isVRT = (ds.GetDriver().ShortName == "VRT")
-    if isVRT:
-        vrtFile = ds.GetDescription()
-        componentList = [fn for fn in ds.GetFileList() if fn != vrtFile]
-        for componentFile in componentList:
-            if not os.path.exists(componentFile):
-                msg = f"VRT file '{vrtFile}' missing component '{componentFile}'"
-                raise ProcessingHistoryError(msg)
-
-            procHist.addParentHistory(componentFile)
 
     return procHist
 
