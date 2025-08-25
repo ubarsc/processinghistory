@@ -206,6 +206,51 @@ class Fulltest(unittest.TestCase):
 
         self.deleteTempFiles([filename])
 
+    def test_vrtsupport(self):
+        """
+        Test VRT support
+        """
+        kea1 = 'img1.kea'
+        kea2 = 'img2.kea'
+        vrt = 'test.vrt'
+        tmpfileList = [kea1, kea2, vrt]
+        makeRaster(kea1)
+        makeRaster(kea2)
+        history.writeHistoryToFile(filename=kea1)
+        history.writeHistoryToFile(filename=kea2)
+        gdal.BuildVRT(vrt, [kea1, kea2])
+
+        # First test read with no history
+        procHist = history.readHistoryFromFile(vrt)
+        self.assertIsNone(procHist,
+            msg="Read from VRT with no history should return None")
+
+        # Add history
+        history.writeHistoryToFile(filename=vrt)
+        # Read it back, and check that the components were added as parents
+        procHist = history.readHistoryFromFile(vrt)
+        parentsList = sorted(procHist.parentsByKey[history.CURRENTFILE_KEY])
+        self.assertEqual(len(parentsList), 2,
+            msg="Incorrect number of parents from VRT")
+        componentList = sorted([kea1, kea2])
+        for i in range(len(componentList)):
+            parentFile = parentsList[i][0]
+            componentFile = componentList[i]
+            self.assertEqual(componentFile, parentFile)
+
+        # Check that parents are not actually included in the VRT
+        ds = gdal.Open(vrt)
+        procHistJSON = ds.GetMetadataItem(history.METADATA_GDALITEMNAME)
+        procHist = history.ProcessingHistory.fromJSON(procHistJSON)
+        self.assertEqual(len(procHist.parentsByKey[history.CURRENTFILE_KEY]),
+            0, msg="Should be no parents embedded in VRT")
+        self.assertEqual(len(procHist.parentsByKey), 1,
+            msg="Should be exactly 1 parent entry in VRT")
+        self.assertEqual(len(procHist.metadataByKey), 1,
+            msg="Should be exactly 1 metadata entry in VRT")
+
+        self.deleteTempFiles(tmpfileList)
+
     @staticmethod
     def deleteTempFiles(filelist):
         """
