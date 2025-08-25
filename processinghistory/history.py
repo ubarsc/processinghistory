@@ -45,8 +45,6 @@ import os
 import getpass
 import json
 import time
-import zlib
-import base64
 try:
     import importlib.metadata
     HAVE_IMPLIB_METADATA = True
@@ -57,19 +55,12 @@ from osgeo import gdal
 
 
 METADATA_GDALITEMNAME = "ProcessingHistory"
-METADATA_GDALITEMNAME_Zipped = "ProcessingHistory_Zipped"
 CURRENTFILE_KEY = "CURRENTFILE"
 METADATA_BY_KEY = "metadataByKey"
 PARENTS_BY_KEY = "parentsByKey"
 AUTOENVVARSLIST_NAME = "HISTORY_ENVVARS_TO_AUTOINCLUDE"
 NO_TIMESTAMP = "UnknownTimestamp"
 TIMESTAMP = "timestamp"
-
-# These GDAL drivers are known to have limits on the size of metadata which
-# can be stored, and so we need to keep below these, or we lose everything.
-# The values are given in bytes. The GTiff limit is actually mysteriously
-# complicated, but this value seems to cover it.
-metadataSizeLimitsByDriver = {'GTiff': 28000}
 
 
 class ProcessingHistory:
@@ -297,24 +288,6 @@ def writeHistoryToFile(userDict={}, parents=[], *, filename=None, gdalDS=None):
     gdalMetadataName = METADATA_GDALITEMNAME
     gdalMetadataValue = procHistJSON
 
-    # Some drivers (GTiff) have size limits, so compress if required.
-    if drvrName in metadataSizeLimitsByDriver:
-        # The driver has size limits, so check if we need to compress
-        valueLen = len(gdalMetadataValue)
-        sizeLimit = metadataSizeLimitsByDriver[drvrName]
-        if valueLen > sizeLimit:
-            procHistJSON_zipped = base64.b64encode(
-                zlib.compress(gdalMetadataValue, 9))
-            gdalMetadataName = METADATA_GDALITEMNAME_Zipped
-            gdalMetadataValue = procHistJSON_zipped
-
-        # Check again, and if still too large, raise an exception
-        valueLen = len(gdalMetadataValue)
-        if valueLen > metadataSizeLimitsByDriver[drvrName]:
-            msg = ("Processing history size (compressed) = {} bytes. {} driver " +
-                   "is limited to {}").format(valueLen, drvrName, sizeLimit)
-            raise ProcessingHistoryError(msg)
-
     # Save in the Dataset
     ds.SetMetadataItem(gdalMetadataName, gdalMetadataValue)
 
@@ -355,10 +328,6 @@ def readHistoryFromFile(filename=None, gdalDS=None):
         ds = gdalDS
 
     procHistJSON = ds.GetMetadataItem(METADATA_GDALITEMNAME)
-    if procHistJSON is None:
-        procHistJSON_zipped = ds.GetMetadataItem(METADATA_GDALITEMNAME_Zipped)
-        if procHistJSON_zipped is not None:
-            procHistJSON = zlib.decompress(base64.b64decode(procHistJSON_zipped))
 
     if procHistJSON is not None:
         procHist = ProcessingHistory.fromJSON(procHistJSON)
