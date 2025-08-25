@@ -46,6 +46,13 @@ There is also an entry called `package_version_dict`, which contains a dictionar
 
 If the environment variable `HISTORY_ENVVARS_TO_AUTOINCLUDE` is set, it will be taken to be a space-separated list of other environment variable names. For each of these names, if it is set, then that name/value pair will also be automatically included in the metadata dictionary.
 
+## VRT Files
+A GDAL VRT file is handled as a somewhat special case. The component files of the VRT are treated as
+parents of the VRT (and there can be no other parents), and the history of those files is read
+directly from them, rather than being copied into the VRT. This is handled transparently, so
+that when history is read from the VRT, it appears to have all come from there. This allows the
+history of the components to be as dynamic as the data itself.
+
 ## Viewer
 A simple viewer called ``historyview`` is provided, to display the processing history to the console. Since the whole lineage can be quite large and complex, no attempt is made to display the whole thing at once. Rather, the metadata dictionary or the list of parents can be displayed, for either the main file itself, or for a nominated ancestor file within the lineage.
 
