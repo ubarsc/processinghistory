@@ -3,7 +3,7 @@
 #
 
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=77.0.3", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -15,7 +15,7 @@ authors = [
 ]
 description = "Add processing history to a GDAL raster file"
 readme = "README.md"
-license = {text = "MIT License"}
+license = "MIT"
 
 [project.scripts]
 historyview = "processinghistory.cmdline.historyview:mainCmd"
